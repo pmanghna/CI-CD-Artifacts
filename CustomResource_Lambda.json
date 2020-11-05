@@ -1,0 +1,75 @@
+{"Resources":{
+        "LambdaExecutionRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                ],
+                "Policies": [
+                    {
+                        "PolicyName": "AllowAll",
+                        "PolicyDocument": {
+                            "Version": "2012-10-17",
+                            "Statement": [
+                                {
+                                    "Action": [
+                                        "*"
+                                    ],
+                                    "Resource": "*",
+                                    "Effect": "Allow"
+                                }
+                            ]
+                        }
+                    }
+                ],
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Action": [
+                                "sts:AssumeRole"
+                            ],
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": [
+                                    "lambda.amazonaws.com"
+                                ]
+                            }
+                        }
+                    ]
+                }
+            }
+        },   
+      
+"MyLambdaFunction": {
+  "Type": "AWS::Lambda::Function",
+  "Properties": {
+     "FunctionName": "mysql", 
+     "Environment": {
+         "Variables": { "username": {"Fn::ImportValue": "Username" } , "passwd" : {"Fn::ImportValue" : "Password"}, "s3_load_prefix" : {"Fn::Sub" : "s3://sbe-metadata-${AWS::AccountId}/metadata/metadata" }, "db_name": "metadata", "db_endpoint": {"Fn::ImportValue": "AuroraCluster"}  }
+     },
+    "Code": {
+        "ZipFile": {
+            "Fn::Join": ["\n", [
+              "import cfnresponse",  
+              "app.handler = function(event, context) {",
+              " if (event.RequestType == 'Create' || event.RequestType == 'Update'|| event.RequestType == 'Delete') {",
+              " response.send(event, context, response.SUCCESS);",
+              " return;", " }",
+              "};"
+            ]]
+          }
+    },
+    "Handler": "app.handler",
+    "Runtime": "python3.7",
+    "Timeout": "30",
+    "Role": {
+      "Fn::GetAtt": [
+        "LambdaExecutionRole", "Arn"
+      ]
+    }
+  }
+}
+}
+}
+

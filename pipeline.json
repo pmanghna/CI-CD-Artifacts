@@ -1,0 +1,146 @@
+{
+    "pipeline": {
+        "name": "Lightspeed-Demo-Pipeline",
+        "roleArn": "arn:aws:iam::102030405060:role/service-role/AWSCodePipelineServiceRole-us-east-1-Lightspeed-Demo-Pipeline",
+        "artifactStores": {
+            "us-east-1": {
+                "type": "S3",
+                "location": "codepipeline-us-east-1-012345678910"
+            },
+            "us-west-2": {
+                "type": "S3",
+                "location": "codepipeline-us-west-2-012345678910"
+            }
+        },
+        "stages": [
+            {
+                "name": "Source",
+                "actions": [
+                    {
+                        "name": "Source",
+                        "actionTypeId": {
+                            "category": "Source",
+                            "owner": "AWS",
+                            "provider": "CodeCommit",
+                            "version": "1"
+                        },
+                        "runOrder": 1,
+                        "configuration": {
+                            "BranchName": "master",
+                            "PollForSourceChanges": "false",
+                            "RepositoryName": "SampleApp"
+                        },
+                        "outputArtifacts": [
+                            {
+                                "name": "SourceArtifact"
+                            }
+                        ],
+                        "inputArtifacts": []
+                    }
+                ]
+            },
+            {
+                "name": "Build",
+                "actions": [
+                    {
+                        "name": "Build",
+                        "actionTypeId": {
+                            "category": "Build",
+                            "owner": "AWS",
+                            "provider": "CodeBuild",
+                            "version": "1"
+                        },
+                        "runOrder": 1,
+                        "configuration": {
+                            "ProjectName": "Lightspeed-Build"
+                        },
+                        "outputArtifacts": [
+                            {
+                                "name": "BuildArtifact"
+                            }
+                        ],
+                        "inputArtifacts": [
+                            {
+                                "name": "SourceArtifact"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "Deploy",
+                "actions": [
+                    {
+                        "name": "DeployToECS-us-east-1",
+                        "actionTypeId": {
+                            "category": "Deploy",
+                            "owner": "AWS",
+                            "provider": "ECS",
+                            "version": "1"
+                        },
+                        "runOrder": 1,
+                        "configuration": {
+                            "ClusterName": "lightspeed-fargate",
+                            "FileName": "image.json",
+                            "ServiceName": "lightspeed-sampleapp"
+                        },
+                        "outputArtifacts": [],
+                        "inputArtifacts": [
+                            {
+                                "name": "BuildArtifact"
+                            }
+                        ]
+                    },
+                    {
+                        "name": "DeployToVMWare-us-east-1",
+                        "actionTypeId": {
+                            "category": "Deploy",
+                            "owner": "AWS",
+                            "provider": "CodeDeploy",
+                            "version": "1"
+                        },
+                        "runOrder": 1,
+                        "configuration": {
+                            "ApplicationName": "Lightspeed-VMWare",
+                            "DeploymentGroupName": "LightSpeedDeploymentGroup-VMWare"
+                        },
+                        "outputArtifacts": [],
+                        "inputArtifacts": [
+                            {
+                                "name": "BuildArtifact"
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "name": "DeployCrossRegion",
+                "region": "us-west-2",
+                "actions": [
+                    {
+                        "inputArtifacts": [
+                            {
+                                "name": "SourceArtifact"
+                            }
+                        ],
+                        "name": "DeployToECS-us-west-1",
+                        "actionTypeId": {
+                            "category": "Deploy",
+                            "owner": "AWS",
+                            "version": "1",
+                            "provider": "CodeDeploy"
+                        },
+                        "outputArtifacts": [],
+                        "configuration": {
+                            "ClusterName": "lightspeed-fargate",
+                            "FileName": "image.json",
+                            "ServiceName": "lightspeed-sampleapp"
+                        },
+                        "runOrder": 1
+                    }
+                ]
+            }
+        ],
+        "version": 4
+    }
+}
