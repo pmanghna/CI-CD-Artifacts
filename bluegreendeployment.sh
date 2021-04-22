@@ -7,7 +7,7 @@ if [ "$deployment" == *"Blue"* ]; then
     echo "SnowballInstance1 (Blue) has the active deployment. Deploying to SnowballInstance2 (Green)"
 
     #Deploy to SnowballInstance2
-    key = 'aws s3 ls codepipeline-us-east-1-012345678910/LightSpeed-Container/BuildArtif/ --profile jedi-devops | sort | tail -n 1 | awk '{print $4}''
+    key = 'aws s3 ls codepipeline-us-east-1-012345678910/LightSpeed-Container/BuildArtif/ --profile <profile-name> | sort | tail -n 1 | awk '{print $4}''
     aws deploy create-deployment --application-name --deployment-group-name --s3-location bucket=codepipeline-us-east-1-012345678910/LightSpeed-Container/BuildArtif/,bundleType=zip,key="$key"
 
     #Check till service WordPress-B is stable
